@@ -1,0 +1,65 @@
+set mesh type = rectangular
+
+subsection Rectangular mesh
+  set x size = 100e-6
+  set y size = 100e-6
+  set z size = 100e-6
+end
+
+set global refinement = 7
+set max refinement = 8
+set min refinement = 6
+set mesh adaptivity = false
+set remeshing period = 100
+
+subsection refinement criterion: 0
+  set variables                      = c
+  set type                           = value
+  set value lower bound              = 0.01
+  set value upper bound              = 0.99
+end
+
+subsection refinement criterion: 1
+  set variables                      = psi
+  set type                           = value
+  set value lower bound              = 0.01
+  set value upper bound              = 0.99
+end
+
+subsection output
+  set condition = EQUAL_SPACING
+  set number = 30
+  set file type = pvtu
+end
+
+subsection boundary conditions: 0
+  set variables = phi
+  set conditions = Natural, Natural, Natural, Dirichlet
+end
+
+subsection linear solver parameters: 0
+  set solver_ids               = 4
+
+  set max iterations           = 30000
+  set tolerance type           = RMSEPerField
+  set tolerance value          = 1e-8
+  set preconditioner           = mg
+end
+
+#subsection linear solver parameters: 1
+#  set solver_ids               = 0
+
+#  set max iterations           = 30000
+#  set tolerance type           = RMSEPerField
+#  set tolerance value          = 1e-8
+#  set preconditioner            = mg
+#end
+
+set time step = 1.0
+set number steps = 5000
+
+set Model constant n_int = 4.0, DOUBLE
+set Model constant D_bulk = 1.0e-15, DOUBLE
+set Model constant gamma = 0.5, DOUBLE
+set Model constant V0 = -4.444e-3, DOUBLE
+set Model constant c_max = 1.0e4, DOUBLE
