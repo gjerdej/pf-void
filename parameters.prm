@@ -55,10 +55,10 @@ end
 #  set preconditioner            = mg
 #end
 
-set time step = 1.0
-set number steps = 5000
+set time step = 0.5
+set number steps = 2000
 
-set Model constant n_int = 4.0, DOUBLE
+set Model constant n_int = 6.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
 set Model constant gamma = 0.5, DOUBLE
 set Model constant V0 = -4.444e-3, DOUBLE

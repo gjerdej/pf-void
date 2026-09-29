@@ -136,45 +136,35 @@ private:
 
     if (index == 3)
       {
-        const double hx =
-          mesh_size[0] / static_cast<double>(mesh_subdivs[0]);
-        const double hy =
-          mesh_size[1] / static_cast<double>(mesh_subdivs[1]);
-
-        // Use the smaller element spacing to define the interface width.
-        const double h = std::min(hx, hy);
-
-        const double x0 = 0.5 * mesh_size[0];
         const double y0 = 0.5 * mesh_size[1];
-        const double radius = mesh_size[0] / 6.0;
 
-        // Signed distance to the horizontal substrate.
-        // Negative below y = y0.
-        const double d_plane = point[1] - y0;
+        // Negative below the substrate surface, where psi approaches 1.
+        const double signed_distance = point[1] - y0;
 
-        // Union of substrate and circle.
-        const double signed_distance = d_plane;
+        const double pi = std::acos(-1.0);
 
-        /*
-        * Define the interface width as the distance over which psi changes
-        * from 0.9 to 0.1. For
-        *
-        *   psi = 0.5 * (1 - tanh(d / epsilon)),
-        *
-        * the 0.9-to-0.1 width is
-        *
-        *   2 * atanh(0.8) * epsilon.
-        */
-        const double epsilon =
-          psi_interface_width / (2.0 * std::log(3));
+        // Preserve the 0.9-to-0.1 width of the normalized profile.
+        const double half_width = 0.5 * psi_interface_width;
 
         const double psi_min = 1.0e-6;
 
-        const double profile =
-          0.5 * (1.0 - std::tanh(signed_distance / epsilon));
+        double profile;
 
-        scalar_value =
-          psi_min + (1.0 - psi_min) * profile;
+        if (signed_distance <= -half_width)
+          {
+            profile = 1.0;
+          }
+        else if (signed_distance >= half_width)
+          {
+            profile = 0.0;
+          }
+        else
+          {
+            profile =
+              0.5 * (1.0 - std::sin(pi * signed_distance / (2.0 * half_width)));
+          }
+
+        scalar_value = psi_min + (1.0 - psi_min) * profile;
       }
   }
 
