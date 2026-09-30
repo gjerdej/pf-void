@@ -256,8 +256,7 @@ private:
         const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
-          - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
+        const ScalarValue contact = 2.0 * c2 * (3.0 - 2.0 * c_pos);
 
         // const ScalarValue j_bv =
         //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi) * std::exp(mu / (2.0 * R * T * c_max));
@@ -372,8 +371,7 @@ private:
             const ScalarValue c8  = c4 * c4;
             // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-            const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
-              - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
+            const ScalarValue contact = 2.0 * c2 * (3.0 - 2.0 * c_pos);
 
             const ScalarValue j0_eff =
                 j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -436,8 +434,7 @@ private:
         const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
-          - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
+        const ScalarValue contact = 2.0 * c2 * (3.0 - 2.0 * c_pos);
 
         // const ScalarValue delta_psi = 7.0 * (1.0 - psi) * psi * (1.0 - psi) * psi * (1.0 - psi) * psi * psix.norm();
 
