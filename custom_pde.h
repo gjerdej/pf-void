@@ -250,19 +250,21 @@ private:
         // const ScalarValue s =
         //   std::max(ScalarValue(0.0), std::min(s_unbounded, ScalarValue(1.0)));
 
-        // const ScalarValue c2  = c * c;
-        // const ScalarValue c4  = c2 * c2;
-        // const ScalarValue c8  = c4 * c4;
+        const ScalarValue c_pos = std::max(c,ScalarValue(0.0));
+        const ScalarValue c2  = c_pos * c_pos;
+        const ScalarValue c4  = c2 * c2;
+        const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
+        const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
+          - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
 
         // const ScalarValue j_bv =
         //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi) * std::exp(mu / (2.0 * R * T * c_max));
           // j0 * F / (R * T) * c * phi;
           // j0 * F / (R * T) * contact * phi;
-        const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+        // const ScalarValue contact =
+        //   std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -361,8 +363,17 @@ private:
             const number j0 = 1.0e3;
             const number T  = 293.15;
 
-            const ScalarValue contact =
-                std::max(c, ScalarValue(0.0));
+            // const ScalarValue contact =
+            //     std::max(c, ScalarValue(0.0));
+
+            const ScalarValue c_pos = std::max(c,ScalarValue(0.0));
+            const ScalarValue c2  = c_pos * c_pos;
+            const ScalarValue c4  = c2 * c2;
+            const ScalarValue c8  = c4 * c4;
+            // const ScalarValue c15 = c8 * c4 * c2 * c;
+
+            const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
+              - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
 
             const ScalarValue j0_eff =
                 j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -419,12 +430,14 @@ private:
         //   std::max(ScalarValue(0.0),
         //           std::min(s_unbounded, ScalarValue(1.0)));
 
-        // const ScalarValue c2  = c * c;
-        // const ScalarValue c4  = c2 * c2;
-        // const ScalarValue c8  = c4 * c4;
+        const ScalarValue c_pos = std::max(c,ScalarValue(0.0));
+        const ScalarValue c2  = c_pos * c_pos;
+        const ScalarValue c4  = c2 * c2;
+        const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
+        const ScalarValue contact = 2.0 * 24310.0 * c8 * c_pos * (1.0 - 36.0/5.0*c_pos + 252.0/11.0*c2 - 42.0*c2*c_pos + 630.0/13.0*c4 
+          - 36.0*c4*c_pos + 84.0/5.0*c4*c2 - 9.0/2.0*c4*c2*c_pos + 9.0/17.0*c8);//s * s * (3.0 - 2.0 * s);
 
         // const ScalarValue delta_psi = 7.0 * (1.0 - psi) * psi * (1.0 - psi) * psi * (1.0 - psi) * psi * psix.norm();
 
@@ -466,8 +479,8 @@ private:
         //   6.0 * s_psi * (1.0 - s_psi)
         //   / (psi_b - psi_a) * psix.norm();
         
-        const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+        // const ScalarValue contact =
+        //   std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
