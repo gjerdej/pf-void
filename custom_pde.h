@@ -144,9 +144,9 @@ private:
         const double pi = std::acos(-1.0);
 
         // Preserve the 0.9-to-0.1 width of the normalized profile.
-        const double half_width = 0.5 * psi_interface_width;
+        const double half_width = pi * psi_interface_width / (4.0 * std::asin(0.8));
 
-        const double psi_min = 1.0e-6;
+        const double psi_min = 1.0e-4;
 
         double profile;
 

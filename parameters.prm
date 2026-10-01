@@ -55,7 +55,7 @@ end
 #  set preconditioner            = mg
 #end
 
-set time step = 0.5
+set time step = 1
 set number steps = 2000
 
 set Model constant n_int = 6.0, DOUBLE
