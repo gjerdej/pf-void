@@ -245,20 +245,15 @@ private:
         // const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
+        // const ScalarValue g_contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
 
-        // const ScalarValue j_bv =
-        //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi) * std::exp(mu / (2.0 * R * T * c_max));
-          // j0 * F / (R * T) * c * phi;
-          // j0 * F / (R * T) * contact * phi;
-        const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+        const ScalarValue g_contact = 2.0 * std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
 
         const ScalarValue k_bv =
-          contact * j0_eff * F / (R * T);
+          g_contact * j0_eff * F / (R * T);
 
         const ScalarValue j_bv = k_bv * (phi - mu / (F * c_max));
         const ScalarValue Jnc = j_bv / (F * c_max);
@@ -331,10 +326,6 @@ private:
         f_tot              = f_chem + f_grad;
         variable_list.set_value_term(2, f_tot);
       }
-    // else if (solve_block_id == 4) // currents
-    //   {
-    //     variable_list.set_value_term(4, ScalarValue(0.0));
-    //   }
       else if (solve_block_id == 4) // electric potential RHS
         {
             const ScalarValue c =
@@ -351,14 +342,13 @@ private:
             const number j0 = 1.0e3;
             const number T  = 293.15;
 
-            const ScalarValue contact =
-                std::max(c, ScalarValue(0.0));
+            const ScalarValue g_contact = 2.0 * std::max(c, ScalarValue(0.0));
 
             const ScalarValue j0_eff =
                 j0 * std::exp(mu / (2.0 * R * T * c_max));
 
             const ScalarValue k_bv =
-                contact * j0_eff * F / (R * T);
+                g_contact * j0_eff * F / (R * T);
 
             const ScalarValue rhs_phi =
                 k_bv * mu / (F * c_max) * psix.norm();
@@ -414,7 +404,7 @@ private:
         // const ScalarValue c8  = c4 * c4;
         // const ScalarValue c15 = c8 * c4 * c2 * c;
 
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
+        // const ScalarValue g_contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
 
         // const ScalarValue delta_psi = 7.0 * (1.0 - psi) * psi * (1.0 - psi) * psi * (1.0 - psi) * psi * psix.norm();
 
@@ -431,7 +421,7 @@ private:
 
         // const ScalarValue k_bv =
         //   j0 * F / (R * T) * c;
-          // j0 * F / (R * T) * contact;
+          // j0 * F / (R * T) * g_contact;
         // const ScalarValue j_bv =
         //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi_lhs) * std::exp(mu / (2.0 * R * T * c_max));
         
@@ -456,14 +446,13 @@ private:
         //   6.0 * s_psi * (1.0 - s_psi)
         //   / (psi_b - psi_a) * psix.norm();
         
-        const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+        const ScalarValue g_contact = 2.0 * std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
 
         const ScalarValue k_bv =
-          contact * j0_eff * F / (R * T);
+          g_contact * j0_eff * F / (R * T);
 
         const ScalarValue eq_phi =
           k_bv * phi_lhs * psix.norm();
