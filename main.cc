@@ -33,7 +33,7 @@ main(int argc, char *argv[])
   c_block.solve_type       = Explicit;
   c_block.solve_timing     = Initialized;
   c_block.field_indices    = {0};
-  c_block.dependencies_rhs = make_dependency_set(fields, {"old_1(c)", "grad(old_1(c))", "old_1(mu)", "grad(old_1(mu))", "old_1(psi)", "grad(old_1(psi))", "old_1(phi)"});
+  c_block.dependencies_rhs = make_dependency_set(fields, {"old_1(c)", "old_1(mu)", "grad(old_1(mu))", "old_1(psi)", "grad(old_1(psi))", "old_1(phi)"});
 
   SolveBlock mu_block;
   mu_block.id               = 1;
@@ -69,8 +69,7 @@ main(int argc, char *argv[])
                         "psi",
                         "grad(psi)",
                         "c",
-                        "mu",
-                        "grad(c)"});
+                        "mu"});
   phi_block.dependencies_rhs =
     make_dependency_set(fields, {"c", "mu", "grad(psi)"});
 

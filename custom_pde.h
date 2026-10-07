@@ -89,8 +89,6 @@ private:
     const std::vector<unsigned int> &mesh_subdivs =
       get_user_inputs().spatial_discretization.rectangular_mesh.subdivisions;
 
-    double int_width = 4*(mesh_size[0] / ((double) mesh_subdivs[0]));
-
     if (index == 0)
       {
         const double hx =
@@ -211,9 +209,6 @@ private:
         const ScalarValue c =
           variable_list.template get_value<Scalar, OldOne>(0);
 
-        const ScalarGrad cx =
-          variable_list.template get_gradient<Scalar, OldOne>(0);
-
         const ScalarValue mu =
           variable_list.template get_value<Scalar, OldOne>(1);
 
@@ -235,32 +230,12 @@ private:
         const number j0               = 1.0e3;
         const number T                = 293.15;
 
-        // const number c_reg = 1.0e-8;
-
         const ScalarValue c_positive =
           std::max(c,ScalarValue(0.0));
 
         const ScalarValue M =
           2.0 * D_bulk / W * c_positive;
-
-        // const number c_off = 0.02;
-        // const number c_on  = 0.98;
-        // const ScalarValue s_unbounded = (c_positive - c_off) / (c_on - c_off);
-
-        // const ScalarValue s =
-        //   std::max(ScalarValue(0.0), std::min(s_unbounded, ScalarValue(1.0)));
-
-        // const ScalarValue c2  = c * c;
-        // const ScalarValue c4  = c2 * c2;
-        // const ScalarValue c8  = c4 * c4;
-        // const ScalarValue c15 = c8 * c4 * c2 * c;
-
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
-
-        // const ScalarValue j_bv =
-        //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi) * std::exp(mu / (2.0 * R * T * c_max));
-          // j0 * F / (R * T) * c * phi;
-          // j0 * F / (R * T) * contact * phi;
+        
         const ScalarValue contact =
           std::max(c, ScalarValue(0.0));
 
@@ -272,25 +247,6 @@ private:
 
         const ScalarValue j_bv = k_bv * (phi - mu / (F * c_max));
         const ScalarValue Jnc = j_bv / (F * c_max);
-
-        // Guaranteed positive even if FE interpolation makes psi slightly
-        // negative or zero.
-        // const ScalarValue psi_reg =
-        //   std::max(psi,psi_floor);
-
-        // const number psi_a = 0.02;
-        // const number psi_b = 0.98;
-
-        // const ScalarValue s_psi =
-        //   std::max(
-        //     ScalarValue(0.0),
-        //     std::min(
-        //       (psi - psi_a) / (psi_b - psi_a),
-        //       ScalarValue(1.0)));
-
-        // const ScalarValue delta_rxn =
-        //   6.0 * s_psi * (1.0 - s_psi)
-        //   / (psi_b - psi_a) * psix.norm();
         
         const ScalarValue eq_c =
           c + sim_timer.get_timestep() *
@@ -341,10 +297,7 @@ private:
         f_tot              = f_chem + f_grad;
         variable_list.set_value_term(2, f_tot);
       }
-    // else if (solve_block_id == 4) // currents
-    //   {
-    //     variable_list.set_value_term(4, ScalarValue(0.0));
-    //   }
+    
       else if (solve_block_id == 4) // electric potential RHS
         {
             const ScalarValue c =
@@ -402,69 +355,21 @@ private:
           variable_list.template
             get_value<Scalar, Current>(0);
 
-        const ScalarGrad cx =
-          variable_list.template
-            get_gradient<Scalar, Current>(0);
-
         const ScalarGrad psix =
           variable_list.template
             get_gradient<Scalar, Current>(3);
-        
-        // const number c_off = 0.02;
-        // const number c_on  = 0.98;
-        // const ScalarValue s_unbounded =
-        //   (std::max(c,ScalarValue(0.0)) - c_off) / (c_on - c_off);
-
-        // const ScalarValue s =
-        //   std::max(ScalarValue(0.0),
-        //           std::min(s_unbounded, ScalarValue(1.0)));
-
-        // const ScalarValue c2  = c * c;
-        // const ScalarValue c4  = c2 * c2;
-        // const ScalarValue c8  = c4 * c4;
-        // const ScalarValue c15 = c8 * c4 * c2 * c;
-
-        // const ScalarValue contact = c15 * (c4 - 3.0 * c2 + 3.0);//s * s * (3.0 - 2.0 * s);
-
-        // const ScalarValue delta_psi = 7.0 * (1.0 - psi) * psi * (1.0 - psi) * psi * (1.0 - psi) * psi * psix.norm();
 
         const number sigma       = 0.1;
         const number sigma_floor = 1.0e-6;
         const number F           = 96485.0;
         const number R           = 8.3145;
         const number j0          = 1.0e3;
-        const number T           = 293.15;        
-
-        // change to max(c,ScalarValue(0.0))
-        // const ScalarValue c_positive =
-        //   std::max(c,ScalarValue(0.0));
-
-        // const ScalarValue k_bv =
-        //   j0 * F / (R * T) * c;
-          // j0 * F / (R * T) * contact;
-        // const ScalarValue j_bv =
-        //   2.0 * j0 * std::sinh(F / (2.0 * R * T) * phi_lhs) * std::exp(mu / (2.0 * R * T * c_max));
+        const number T           = 293.15;     
         
                 
         // Conductivity with a floor in the Li region so that
         //  the matrix does not become singular.
-        const ScalarValue conductivity =
-          sigma * (1.0 - psi)
-          + sigma_floor * psi;
-
-        // const number psi_a = 0.02;
-        // const number psi_b = 0.98;
-
-        // const ScalarValue s_psi =
-        //   std::max(
-        //     ScalarValue(0.0),
-        //     std::min(
-        //       (psi - psi_a) / (psi_b - psi_a),
-        //       ScalarValue(1.0)));
-
-        // const ScalarValue delta_rxn =
-        //   6.0 * s_psi * (1.0 - s_psi)
-        //   / (psi_b - psi_a) * psix.norm();
+        const ScalarValue conductivity = sigma * (1.0 - psi) + sigma_floor * psi;
         
         const ScalarValue contact =
           std::max(c, ScalarValue(0.0));
