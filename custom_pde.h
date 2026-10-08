@@ -105,7 +105,7 @@ private:
         const double h = std::min(hx, hy);
 
         const double x0 = 0.5 * mesh_size[0];
-        const double y0 = 0.5 * mesh_size[1];
+        const double y0 = 0.25 * mesh_size[1];
         const double radius = mesh_size[0] / 6.0;
 
         // Signed distance to the horizontal substrate.
@@ -199,30 +199,23 @@ private:
         const number j0               = 1.0e3;
         const number T                = 293.15;
 
-        const ScalarValue c_positive =
-          std::max(c,ScalarValue(0.0));
+        const ScalarValue c_positive = std::max(c,ScalarValue(0.0));
 
-        const ScalarValue M =
-          2.0 * D_bulk / W * c_positive;
+        const ScalarValue M = 2.0 * D_bulk / W * c_positive;
         
-        const ScalarValue contact =
-          2.0 * std::max(c, ScalarValue(0.0));
+        const ScalarValue contact = 2.0 * std::max(c, ScalarValue(0.0));
 
-        const ScalarValue j0_eff =
-          j0 * std::exp(mu / (2.0 * R * T * c_max));
+        const ScalarValue j0_eff = j0 * std::exp(mu / (2.0 * R * T * c_max));
 
-        const ScalarValue k_bv =
-          contact * j0_eff * F / (R * T);
+        const ScalarValue k_bv = contact * j0_eff * F / (R * T);
 
         const ScalarValue j_bv = k_bv * (phi - mu / (F * c_max));
         const ScalarValue Jnc = j_bv / (F * c_max);
         
         const ScalarValue eq_c =
-          c + sim_timer.get_timestep() *
-            (M * mux * psix + Jnc * psix.norm()) / psi;
+          c + sim_timer.get_timestep() * (M * mux * psix + Jnc * psix.norm()) / psi;
 
-        const ScalarGrad eqx_c =
-          -sim_timer.get_timestep() * M * mux;
+        const ScalarGrad eqx_c = -sim_timer.get_timestep() * M * mux;
 
         variable_list.set_value_term(0, eq_c);
         variable_list.set_gradient_term(0, eqx_c);
