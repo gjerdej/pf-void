@@ -91,45 +91,7 @@ private:
 
     if (index == 0)
       {
-        const double hx =
-          mesh_size[0] / static_cast<double>(mesh_subdivs[0]);
-        const double hy =
-          mesh_size[1] / static_cast<double>(mesh_subdivs[1]);
-
-        // Use the smaller element spacing to define the interface width.
-        const double h = std::min(hx, hy);
-
-        const double x0 = 0.5 * mesh_size[0];
-        const double y0 = 0.5 * mesh_size[1];
-        const double radius = mesh_size[0] / 6.0;
-
-        // Signed distance to the horizontal substrate.
-        // Negative below y = y0.
-        const double d_plane = point[1] - y0;
-
-        // Union of substrate and circle.
-        const double signed_distance = d_plane;
-
-        /*
-        * Define the interface width as the distance over which psi changes
-        * from 0.9 to 0.1. For
-        *
-        *   psi = 0.5 * (1 - tanh(d / epsilon)),
-        *
-        * the 0.9-to-0.1 width is
-        *
-        *   2 * atanh(0.8) * epsilon.
-        */
-        const double epsilon =
-          psi_interface_width / (2.0 * std::log(3));
-
-        const double psi_min = 1.0e-6;
-
-        const double profile =
-          0.5 * (1.0 - std::tanh(signed_distance / epsilon));
-
-        scalar_value =
-          psi_min + (1.0 - psi_min) * profile;
+        scalar_value = 1.0;      
       }
 
     if (index == 3)
@@ -150,8 +112,15 @@ private:
         // Negative below y = y0.
         const double d_plane = point[1] - y0;
 
+        // Signed distance to the circle centered on the substrate surface.
+        // Negative inside the circle.
+        const double dx = point[0] - x0;
+        const double dy = point[1] - y0;
+        const double d_circle =
+          std::sqrt(dx * dx + dy * dy) - radius;
+
         // Union of substrate and circle.
-        const double signed_distance = d_plane;
+        const double signed_distance = std::min(d_plane, d_circle);
 
         /*
         * Define the interface width as the distance over which psi changes
@@ -237,7 +206,7 @@ private:
           2.0 * D_bulk / W * c_positive;
         
         const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+          2.0 * std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -315,7 +284,7 @@ private:
             const number T  = 293.15;
 
             const ScalarValue contact =
-                std::max(c, ScalarValue(0.0));
+                2.0 * std::max(c, ScalarValue(0.0));
 
             const ScalarValue j0_eff =
                 j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -372,7 +341,7 @@ private:
         const ScalarValue conductivity = sigma * (1.0 - psi) + sigma_floor * psi;
         
         const ScalarValue contact =
-          std::max(c, ScalarValue(0.0));
+          2.0 * std::max(c, ScalarValue(0.0));
 
         const ScalarValue j0_eff =
           j0 * std::exp(mu / (2.0 * R * T * c_max));
@@ -383,7 +352,6 @@ private:
         const ScalarValue eq_phi =
           k_bv * phi_lhs * psix.norm();
 
-        // Ohmic conduction contribution.
         const ScalarGrad eqx_phi =
           conductivity * phix_lhs;
 

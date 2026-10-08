@@ -1,12 +1,12 @@
 set mesh type = rectangular
 
 subsection Rectangular mesh
-  set x size = 100e-6
-  set y size = 100e-6
-  set z size = 100e-6
+  set x size = 3e-6
+  set y size = 3e-6
+  set z size = 3e-6
 end
 
-set global refinement = 7
+set global refinement = 6
 set max refinement = 8
 set min refinement = 6
 set mesh adaptivity = false
@@ -28,7 +28,7 @@ end
 
 subsection output
   set condition = EQUAL_SPACING
-  set number = 5
+  set number = 100
   set file type = pvtu
 end
 
@@ -55,11 +55,11 @@ end
 #  set preconditioner            = mg
 #end
 
-set time step = 1.0
-set number steps = 5
+set time step = 0.001
+set number steps = 100000
 
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
 set Model constant gamma = 0.5, DOUBLE
-set Model constant V0 = -4.444e-3, DOUBLE
+set Model constant V0 = -3.0e-4, DOUBLE
 set Model constant c_max = 1.0e4, DOUBLE
