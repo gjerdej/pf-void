@@ -28,7 +28,7 @@ end
 
 subsection output
   set condition = EQUAL_SPACING
-  set number = 100
+  set number = 20
   set file type = pvtu
 end
 
@@ -56,10 +56,10 @@ end
 #end
 
 set time step = 0.001
-set number steps = 100000
+set number steps = 2000
 
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
 set Model constant gamma = 0.5, DOUBLE
-set Model constant V0 = -3.0e-4, DOUBLE
+set Model constant V0 = -3.0e-2, DOUBLE
 set Model constant c_max = 1.0e4, DOUBLE
