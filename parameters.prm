@@ -34,7 +34,7 @@ end
 
 subsection boundary conditions: 0
   set variables = phi
-  set conditions = Natural, Natural, Natural, Dirichlet
+  set conditions = Natural, Natural, Natural, Natural
 end
 
 subsection linear solver parameters: 0
@@ -61,5 +61,5 @@ set number steps = 2000
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
 set Model constant gamma = 0.5, DOUBLE
-set Model constant V0 = -3.0e-2, DOUBLE
+set Model constant J_app = 1e8, DOUBLE
 set Model constant c_max = 1.0e4, DOUBLE

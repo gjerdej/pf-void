@@ -26,7 +26,8 @@ main(int argc, char *argv[])
                                          FieldAttributes("mu"),
                                          FieldAttributes("f_tot"),
                                          FieldAttributes("psi"),
-                                         FieldAttributes("phi")};
+                                         FieldAttributes("phi"),
+                                         FieldAttributes("psi_top")};
 
   SolveBlock c_block;
   c_block.id               = 0;
@@ -54,7 +55,6 @@ main(int argc, char *argv[])
   psi_block.solve_type    = Constant;
   psi_block.solve_timing  = Initialized;
   psi_block.field_indices = {3};
-  // No RHS evaluation is needed for a field initialized once and held constant.
   psi_block.dependencies_rhs = make_dependency_set(fields, {});
 
   SolveBlock phi_block;
@@ -69,12 +69,19 @@ main(int argc, char *argv[])
                         "psi",
                         "grad(psi)",
                         "c",
-                        "mu"});
+                        "mu",
+                        "psi_top"});
   phi_block.dependencies_rhs =
-    make_dependency_set(fields, {"c", "mu", "grad(psi)"});
+    make_dependency_set(fields, {"c", "mu", "psi", "grad(psi)", "psi_top", "grad(psi_top)"});
 
+  SolveBlock psi_top_block;
+  psi_top_block.id            = 5;
+  psi_top_block.solve_type    = Constant;
+  psi_top_block.solve_timing  = Initialized;
+  psi_top_block.field_indices = {5};
+  psi_top_block.dependencies_rhs = make_dependency_set(fields, {});
 
-  std::vector<SolveBlock> solve_blocks({c_block, mu_block, pp_block, psi_block, phi_block});
+  std::vector<SolveBlock> solve_blocks({c_block, mu_block, pp_block, psi_block, psi_top_block, phi_block});
 
 
   UserInputParameters<dim>       user_inputs(parameters_filename);

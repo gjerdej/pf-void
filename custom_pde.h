@@ -28,7 +28,7 @@ public:
     : PDEOperatorBase<dim, degree, number>(_user_inputs, _pf_tools)
     , D_bulk(get_user_inputs().user_constants.get_double("D_bulk"))
     , gamma(get_user_inputs().user_constants.get_double("gamma"))
-    , V0(get_user_inputs().user_constants.get_double("V0"))
+    , J_app(get_user_inputs().user_constants.get_double("J_app"))
     , c_max(get_user_inputs().user_constants.get_double("c_max"))
     , kappa(0.0)
     , W(0.0)
@@ -143,30 +143,71 @@ private:
         scalar_value =
           psi_min + (1.0 - psi_min) * profile;
       }
-  }
 
-  void
-  set_dirichlet([[maybe_unused]] const unsigned int       &index,
-                [[maybe_unused]] const unsigned int       &boundary_id,
-                [[maybe_unused]] const unsigned int       &component,
-                [[maybe_unused]] const dealii::Point<dim> &point,
-                [[maybe_unused]] const SimulationTimer    &sim_timer,
-                [[maybe_unused]] number                   &scalar_value,
-                [[maybe_unused]] number &vector_component_value) const override
-  {
-    [[maybe_unused]] const double x = (dim > 0) ? point[0] : 0.0;
-    [[maybe_unused]] const double y = (dim > 1) ? point[1] : 0.0;
-    [[maybe_unused]] const double z = (dim > 2) ? point[2] : 0.0;
-
-    if (index == 4)
+    if (index == 5)
       {
-      if (boundary_id == RectangularMesh<dim>::Boundary::Bottom)
-        {
-          scalar_value = V0;
-          return;
-        }
+        const double hx =
+          mesh_size[0] / static_cast<double>(mesh_subdivs[0]);
+        const double hy =
+          mesh_size[1] / static_cast<double>(mesh_subdivs[1]);
+
+        // Use the smaller element spacing to define the interface width.
+        const double h = std::min(hx, hy);
+
+        const double y0 = 0.9 * mesh_size[1];
+
+        // Signed distance to the horizontal substrate.
+        // Negative below y = y0.
+        const double d_plane = point[1] - y0;
+
+        // Union of substrate and circle.
+        const double signed_distance = d_plane;
+
+        /*
+        * Define the interface width as the distance over which psi changes
+        * from 0.9 to 0.1. For
+        *
+        *   psi = 0.5 * (1 - tanh(d / epsilon)),
+        *
+        * the 0.9-to-0.1 width is
+        *
+        *   2 * atanh(0.8) * epsilon.
+        */
+        const double epsilon =
+          psi_interface_width / (2.0 * std::log(3));
+
+        const double psi_min = 1.0e-6;
+
+        const double profile =
+          0.5 * (1.0 - std::tanh(signed_distance / epsilon));
+
+        scalar_value =
+          psi_min + (1.0 - psi_min) * profile;
       }
   }
+
+  // void
+  // set_dirichlet([[maybe_unused]] const unsigned int       &index,
+  //               [[maybe_unused]] const unsigned int       &boundary_id,
+  //               [[maybe_unused]] const unsigned int       &component,
+  //               [[maybe_unused]] const dealii::Point<dim> &point,
+  //               [[maybe_unused]] const SimulationTimer    &sim_timer,
+  //               [[maybe_unused]] number                   &scalar_value,
+  //               [[maybe_unused]] number &vector_component_value) const override
+  // {
+  //   [[maybe_unused]] const double x = (dim > 0) ? point[0] : 0.0;
+  //   [[maybe_unused]] const double y = (dim > 1) ? point[1] : 0.0;
+  //   [[maybe_unused]] const double z = (dim > 2) ? point[2] : 0.0;
+
+  //   if (index == 4)
+  //     {
+  //     if (boundary_id == RectangularMesh<dim>::Boundary::Bottom)
+  //       {
+  //         scalar_value = V0;
+  //         return;
+  //       }
+  //     }
+  // }
   
   void
   compute_rhs([[maybe_unused]] FieldContainer<dim, degree, number> &variable_list,
@@ -262,33 +303,45 @@ private:
     
       else if (solve_block_id == 4) // electric potential RHS
         {
-            const ScalarValue c =
-                variable_list.template get_value<Scalar, Current>(0);
+          const ScalarValue c =
+              variable_list.template get_value<Scalar, Current>(0);
 
-            const ScalarValue mu =
-                variable_list.template get_value<Scalar, Current>(1);
+          const ScalarValue mu =
+              variable_list.template get_value<Scalar, Current>(1);
 
-            const ScalarGrad psix =
-                variable_list.template get_gradient<Scalar, Current>(3);
+          const ScalarValue psi =
+            variable_list.template
+              get_value<Scalar, Current>(3);
 
-            const number F  = 96485.0;
-            const number R  = 8.3145;
-            const number j0 = 1.0e3;
-            const number T  = 293.15;
+          const ScalarGrad psix =
+            variable_list.template get_gradient<Scalar, Current>(3);
 
-            const ScalarValue contact =
-                2.0 * std::max(c, ScalarValue(0.0));
+          const ScalarValue psi_top =
+            variable_list.template
+              get_value<Scalar, Current>(5);
 
-            const ScalarValue j0_eff =
-                j0 * std::exp(mu / (2.0 * R * T * c_max));
+          const ScalarGrad psi_topx =
+          variable_list.template
+            get_gradient<Scalar, Current>(5);
 
-            const ScalarValue k_bv =
-                contact * j0_eff * F / (R * T);
+          const number F  = 96485.0;
+          const number R  = 8.3145;
+          const number j0 = 1.0e3;
+          const number T  = 293.15;
 
-            const ScalarValue rhs_phi =
-                k_bv * mu / (F * c_max) * psix.norm();
+          const ScalarValue contact =
+              2.0 * std::max(c, ScalarValue(0.0));
 
-            variable_list.set_value_term(4, rhs_phi);
+          const ScalarValue j0_eff =
+              j0 * std::exp(mu / (2.0 * R * T * c_max));
+
+          const ScalarValue k_bv =
+              contact * j0_eff * F / (R * T);
+
+          const ScalarValue rhs_phi =
+              k_bv * mu / (F * c_max) * psix.norm() * psi_top - psi * psi_topx.norm() * J_app;
+
+          variable_list.set_value_term(4, rhs_phi);
         }
   }
   void
@@ -321,6 +374,10 @@ private:
           variable_list.template
             get_gradient<Scalar, Current>(3);
 
+        const ScalarValue psi_top =
+          variable_list.template
+            get_value<Scalar, Current>(5);
+
         const number sigma       = 0.1;
         const number sigma_floor = 1.0e-6;
         const number F           = 96485.0;
@@ -331,7 +388,7 @@ private:
                 
         // Conductivity with a floor in the Li region so that
         //  the matrix does not become singular.
-        const ScalarValue conductivity = sigma * (1.0 - psi) + sigma_floor * psi;
+        const ScalarValue conductivity = sigma * (1.0 - psi) * psi_top + sigma_floor * psi;
         
         const ScalarValue contact =
           2.0 * std::max(c, ScalarValue(0.0));
@@ -343,7 +400,7 @@ private:
           contact * j0_eff * F / (R * T);
 
         const ScalarValue eq_phi =
-          k_bv * phi_lhs * psix.norm();
+          k_bv * phi_lhs * psix.norm() * psi_top;
 
         const ScalarGrad eqx_phi =
           conductivity * phix_lhs;
@@ -358,7 +415,7 @@ private:
   number gamma;
   number kappa;
   number n_int;
-  number V0;
+  number J_app;
   number c_max;
   number dx;
   number c_interface_width;
