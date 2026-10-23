@@ -30,49 +30,40 @@ main(int argc, char *argv[])
                                          FieldAttributes("psi_top")};
 
   SolveBlock c_block;
-  c_block.id               = 0;
-  c_block.solve_type       = Explicit;
-  c_block.solve_timing     = Initialized;
-  c_block.field_indices    = {0};
-  c_block.dependencies_rhs = make_dependency_set(fields, {"old_1(c)", "old_1(mu)", "grad(old_1(mu))", "old_1(psi)", "grad(old_1(psi))", "old_1(phi)"});
+  c_block.id                = 0;
+  c_block.solve_type        = Explicit;
+  c_block.solve_timing      = Initialized;
+  c_block.field_indices     = {0};
+  c_block.dependencies_rhs  = make_dependency_set(fields, {"old_1(c)", "grad(old_1(mu))", "old_1(psi)", "grad(old_1(psi))", "old_1(phi)"});
 
   SolveBlock mu_block;
-  mu_block.id               = 1;
-  mu_block.solve_type       = Explicit;
-  mu_block.solve_timing     = Uninitialized;
-  mu_block.field_indices    = {1};
-  mu_block.dependencies_rhs = make_dependency_set(fields, {"c", "grad(c)", "old_1(psi)", "grad(old_1(psi))"});
+  mu_block.id                = 1;
+  mu_block.solve_type        = Explicit;
+  mu_block.solve_timing      = Uninitialized;
+  mu_block.field_indices     = {1};
+  mu_block.dependencies_rhs  = make_dependency_set(fields, {"c", "grad(c)", "psi", "grad(psi)"});
 
   SolveBlock pp_block;
-  pp_block.id               = 2;
-  pp_block.solve_type       = Explicit;
-  pp_block.solve_timing     = PostProcess;
-  pp_block.field_indices    = {2};
-  pp_block.dependencies_rhs = make_dependency_set(fields, {"c", "grad(c)"});
+  pp_block.id                = 2;
+  pp_block.solve_type        = Explicit;
+  pp_block.solve_timing      = PostProcess;
+  pp_block.field_indices     = {2};
+  pp_block.dependencies_rhs  = make_dependency_set(fields, {"c", "grad(c)"});
 
   SolveBlock psi_block;
-  psi_block.id            = 3;
-  psi_block.solve_type    = Constant;
-  psi_block.solve_timing  = Initialized;
-  psi_block.field_indices = {3};
+  psi_block.id               = 3;
+  psi_block.solve_type       = Constant;
+  psi_block.solve_timing     = Initialized;
+  psi_block.field_indices    = {3};
   psi_block.dependencies_rhs = make_dependency_set(fields, {});
 
   SolveBlock phi_block;
-  phi_block.id              = 4;
-  phi_block.solve_type      = Linear;
-  phi_block.solve_timing    = Uninitialized;
-  phi_block.field_indices   = {4};
-  phi_block.dependencies_lhs =
-    make_dependency_set(fields,
-                        {"lhs(phi)",
-                        "grad(lhs(phi))",
-                        "psi",
-                        "grad(psi)",
-                        "c",
-                        "mu",
-                        "psi_top"});
-  phi_block.dependencies_rhs =
-    make_dependency_set(fields, {"c", "mu", "psi", "grad(psi)", "psi_top", "grad(psi_top)"});
+  phi_block.id               = 4;
+  phi_block.solve_type       = Linear;
+  phi_block.solve_timing     = Uninitialized;
+  phi_block.field_indices    = {4};
+  phi_block.dependencies_lhs = make_dependency_set(fields, {"lhs(phi)", "grad(lhs(phi))", "psi", "grad(psi)", "c", "psi_top"});
+  phi_block.dependencies_rhs = make_dependency_set(fields, {"c", "psi", "psi_top", "grad(psi_top)"});
 
   SolveBlock psi_top_block;
   psi_top_block.id            = 5;
@@ -81,7 +72,7 @@ main(int argc, char *argv[])
   psi_top_block.field_indices = {5};
   psi_top_block.dependencies_rhs = make_dependency_set(fields, {});
 
-  std::vector<SolveBlock> solve_blocks({c_block, mu_block, pp_block, psi_block, psi_top_block, phi_block});
+  std::vector<SolveBlock> solve_blocks({psi_block, psi_top_block, c_block, mu_block, pp_block, phi_block});
 
 
   UserInputParameters<dim>       user_inputs(parameters_filename);
