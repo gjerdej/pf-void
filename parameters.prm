@@ -6,7 +6,7 @@ subsection Rectangular mesh
   set z size = 3e-6
 end
 
-set global refinement = 8
+set global refinement = 6
 set max refinement = 8
 set min refinement = 6
 set mesh adaptivity = false
@@ -55,8 +55,8 @@ end
 #  set preconditioner            = mg
 #end
 
-set time step = 0.003
-set number steps = 100
+set time step = 0.04
+set number steps = 3000
 
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
