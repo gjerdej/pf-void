@@ -6,7 +6,7 @@ subsection Rectangular mesh
   set z size = 3e-6
 end
 
-set global refinement = 6
+set global refinement = 8
 set max refinement = 8
 set min refinement = 6
 set mesh adaptivity = false
@@ -37,10 +37,15 @@ subsection boundary conditions: 0
   set conditions = Natural, Natural, Natural, Natural
 end
 
+subsection boundary conditions: 1
+  set variables = u
+  set conditions = Natural, Natural, Natural, Natural
+end
+
 subsection linear solver parameters: 0
   set solver_ids               = 4
 
-  set max iterations           = 30000
+  set max iterations           = 3000
   set tolerance type           = RMSEPerField
   set tolerance value          = 1e-8
   set preconditioner           = mg
@@ -55,8 +60,17 @@ end
 #  set preconditioner            = mg
 #end
 
+subsection linear solver parameters: 1
+  set solver_ids               = 6
+
+  set max iterations           = 3000
+  set tolerance type           = RMSEPerField
+  set tolerance value          = 1e-8
+  set preconditioner           = mg
+end
+
 set time step = 0.04
-set number steps = 1000
+set number steps = 1
 
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE
@@ -65,7 +79,7 @@ set Model constant J_app = 10.0, DOUBLE
 set Model constant c_max = 7.7e4, DOUBLE
 set Model constant E_Li = 6.0, DOUBLE
 set Model constant nu_Li = 0.36, DOUBLE
-set Model constant p_stack = 10.0, DOUBLE
-set Model constant penalty_factor = 1.0e4, DOUBLE
+set Model constant p_stack = 5.0, DOUBLE
+set Model constant penalty_factor = 10.0, DOUBLE
 set Model constant elastic_floor = 1.0e-6, DOUBLE
 set Model constant y_mech_bottom = 0.1, DOUBLE

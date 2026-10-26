@@ -91,7 +91,7 @@ private:
         const double h = std::min(hx, hy);
 
         const double x0 = 0.5 * mesh_size[0];
-        const double y0 = 0.25 * mesh_size[1];
+        const double y0 = 0.5 * mesh_size[1];
         const double radius = mesh_size[0] / 6.0;
 
         // Signed distance to the horizontal substrate.
@@ -172,7 +172,7 @@ private:
         const double epsilon = psi_interface_width / (2.0 * std::log(3.0));
 
         // One above the bottom boundary; zero below it.
-        scalar_value = 0.5 * (1.0 + std::tanh((point[1] - y_mech_bottom) / epsilon));
+        scalar_value = 0.5 * (1.0 + std::tanh((point[1] - y_mech_bottom * mesh_size[1]) / epsilon));
       }
   }
   
@@ -269,6 +269,34 @@ private:
           eq_u[1] = p_stack * psi * psi_botx.norm();
 
           variable_list.set_value_term(6, eq_u);
+        }
+
+      else if (solve_block_id == 8) // Stress postprocessing
+        {
+          const VectorGrad ux = variable_list.template get_gradient<Vector, Current>(6);
+          const ScalarValue c = variable_list.template get_value<Scalar, Current>(0);
+
+          const ScalarValue c_mech = std::min(ScalarValue(1.0), std::max(c, ScalarValue(0.0)));
+
+          const number shear_modulus = E_Li / (2.0 * (1.0 + nu_Li));
+          const number lame_lambda = E_Li * nu_Li /((1.0 + nu_Li) * (1.0 - 2.0 * nu_Li));
+
+          const ScalarValue exx = ux[0][0];
+          const ScalarValue eyy = ux[1][1];
+          const ScalarValue exy = 0.5 * (ux[0][1] + ux[1][0]);
+
+          const ScalarValue trace_eps = exx + eyy;
+
+          // Material stiffness interpolation, including residual stiffness.
+          const ScalarValue material_weight = elastic_floor + (1.0 - elastic_floor) * c_mech;
+
+          const ScalarValue sigma_xx = material_weight * (lame_lambda * trace_eps + 2.0 * shear_modulus * exx);
+          const ScalarValue sigma_yy = material_weight * (lame_lambda * trace_eps + 2.0 * shear_modulus * eyy);
+          const ScalarValue sigma_xy = material_weight * 2.0 * shear_modulus * exy;
+
+          variable_list.set_value_term(8, sigma_xx);
+          variable_list.set_value_term(9, sigma_yy);
+          variable_list.set_value_term(10, sigma_xy);
         }
   }
   void

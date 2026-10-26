@@ -29,7 +29,10 @@ main(int argc, char *argv[])
                                          FieldAttributes("phi"),
                                          FieldAttributes("psi_top"),
                                          FieldAttributes("u", Vector),
-                                         FieldAttributes("psi_bot")};
+                                         FieldAttributes("psi_bot"),
+                                         FieldAttributes("sigma_xx", Scalar),
+                                         FieldAttributes("sigma_yy", Scalar),
+                                         FieldAttributes("sigma_xy", Scalar)};
 
   SolveBlock c_block;
   c_block.id                = 0;
@@ -82,7 +85,7 @@ main(int argc, char *argv[])
   mechanics_block.field_indices = {6};
   mechanics_block.dependencies_rhs = make_dependency_set(fields, {"psi", "grad(psi_bot)"});
   mechanics_block.dependencies_lhs = make_dependency_set(fields, {"lhs(u)", "grad(lhs(u))", "c", "psi", "grad(psi)", "psi_bot"});
-  
+
   // Fixed geometry of the mechanical bottom boundary.
   SolveBlock psi_bot_block;
   psi_bot_block.id            = 7;
@@ -90,7 +93,14 @@ main(int argc, char *argv[])
   psi_bot_block.solve_timing  = Initialized;
   psi_bot_block.field_indices = {7};
 
-  std::vector<SolveBlock> solve_blocks({psi_block, psi_top_block, psi_bot_block, c_block, mu_block, pp_block, phi_block, mechanics_block});
+  SolveBlock stress_block;
+  stress_block.id            = 8;
+  stress_block.solve_type    = Explicit;
+  stress_block.solve_timing  = PostProcess;
+  stress_block.field_indices = {8, 9, 10};
+  stress_block.dependencies_rhs = make_dependency_set(fields,{"grad(u)","c"});
+
+  std::vector<SolveBlock> solve_blocks({psi_block, psi_top_block, psi_bot_block, c_block, mu_block, pp_block, phi_block, mechanics_block, stress_block});
 
 
   UserInputParameters<dim>       user_inputs(parameters_filename);
