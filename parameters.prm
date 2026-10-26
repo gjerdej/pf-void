@@ -49,7 +49,7 @@ end
 #subsection linear solver parameters: 1
 #  set solver_ids               = 0
 
-#  set max iterations           = 30000
+#  set max iterations           = 2000
 #  set tolerance type           = RMSEPerField
 #  set tolerance value          = 1e-8
 #  set preconditioner            = mg
@@ -63,3 +63,9 @@ set Model constant D_bulk = 1.0e-15, DOUBLE
 set Model constant gamma = 0.5, DOUBLE
 set Model constant J_app = 10.0, DOUBLE
 set Model constant c_max = 7.7e4, DOUBLE
+set Model constant E_Li = 6.0, DOUBLE
+set Model constant nu_Li = 0.36, DOUBLE
+set Model constant p_stack = 10.0, DOUBLE
+set Model constant penalty_factor = 1.0e4, DOUBLE
+set Model constant elastic_floor = 1.0e-6, DOUBLE
+set Model constant y_mech_bottom = 0.1, DOUBLE

@@ -19,15 +19,17 @@ main(int argc, char *argv[])
   ParseCMDOptions cli_options(argc, argv);
   std::string     parameters_filename = cli_options.get_parameters_filename();
 
-  constexpr unsigned int dim    = 2; // TODO change to 3 (original app)
-  constexpr unsigned int degree = 1; // TODO change to 1 (original app)
+  constexpr unsigned int dim    = 2;
+  constexpr unsigned int degree = 1;
 
   std::vector<FieldAttributes> fields = {FieldAttributes("c"),
                                          FieldAttributes("mu"),
                                          FieldAttributes("f_tot"),
                                          FieldAttributes("psi"),
                                          FieldAttributes("phi"),
-                                         FieldAttributes("psi_top")};
+                                         FieldAttributes("psi_top"),
+                                         FieldAttributes("u", Vector),
+                                         FieldAttributes("psi_bot")};
 
   SolveBlock c_block;
   c_block.id                = 0;
@@ -72,7 +74,23 @@ main(int argc, char *argv[])
   psi_top_block.field_indices = {5};
   psi_top_block.dependencies_rhs = make_dependency_set(fields, {});
 
-  std::vector<SolveBlock> solve_blocks({psi_block, psi_top_block, c_block, mu_block, pp_block, phi_block});
+  // Mechanical equilibrium.
+  SolveBlock mechanics_block;
+  mechanics_block.id            = 6;
+  mechanics_block.solve_type    = Linear;
+  mechanics_block.solve_timing  = Uninitialized;
+  mechanics_block.field_indices = {6};
+  mechanics_block.dependencies_rhs = make_dependency_set(fields, {"psi", "grad(psi_bot)"});
+  mechanics_block.dependencies_lhs = make_dependency_set(fields, {"lhs(u)", "grad(lhs(u))", "c", "psi", "grad(psi)", "psi_bot"});
+  
+  // Fixed geometry of the mechanical bottom boundary.
+  SolveBlock psi_bot_block;
+  psi_bot_block.id            = 7;
+  psi_bot_block.solve_type    = Constant;
+  psi_bot_block.solve_timing  = Initialized;
+  psi_bot_block.field_indices = {7};
+
+  std::vector<SolveBlock> solve_blocks({psi_block, psi_top_block, psi_bot_block, c_block, mu_block, pp_block, phi_block, mechanics_block});
 
 
   UserInputParameters<dim>       user_inputs(parameters_filename);

@@ -36,6 +36,12 @@ public:
     , dx(0.0)
     , c_interface_width(0.0)
     , psi_interface_width(0.0)
+    , E_Li(get_user_inputs().user_constants.get_double("E_Li"))
+    , nu_Li(get_user_inputs().user_constants.get_double("nu_Li"))
+    , p_stack(get_user_inputs().user_constants.get_double("p_stack"))
+    , penalty_factor(get_user_inputs().user_constants.get_double("penalty_factor"))
+    , elastic_floor(get_user_inputs().user_constants.get_double("elastic_floor"))
+    , y_mech_bottom(get_user_inputs().user_constants.get_double("y_mech_bottom"))
   {
     const auto &mesh = get_user_inputs().spatial_discretization.rectangular_mesh;
 
@@ -155,6 +161,19 @@ private:
 
         scalar_value = psi_min + (1.0 - psi_min) * profile;
       }
+
+    if (index == 6) // Vector displacement u
+      {
+        vector_component_value = 0.0;
+      }
+
+    if (index == 7) // Mechanical bottom indicator
+      {
+        const double epsilon = psi_interface_width / (2.0 * std::log(3.0));
+
+        // One above the bottom boundary; zero below it.
+        scalar_value = 0.5 * (1.0 + std::tanh((point[1] - y_mech_bottom) / epsilon));
+      }
   }
   
   void
@@ -236,6 +255,21 @@ private:
 
           variable_list.set_value_term(4, rhs_phi);
         }
+
+      else if (solve_block_id == 6) // Mechanics RHS
+        {
+          const ScalarValue psi = variable_list.template get_value<Scalar, Current>(3);
+          const ScalarGrad psi_botx = variable_list.template get_gradient<Scalar, Current>(7);
+
+          VectorValue eq_u;
+          for (unsigned int i = 0; i < dim; ++i)
+            eq_u[i] = 0.0;
+
+          // Positive pressure at the bottom pushes upward.
+          eq_u[1] = p_stack * psi * psi_botx.norm();
+
+          variable_list.set_value_term(6, eq_u);
+        }
   }
   void
   compute_lhs([[maybe_unused]] FieldContainer<dim, degree, number> &variable_list,
@@ -274,6 +308,72 @@ private:
         variable_list.set_value_term(4, eq_phi);
         variable_list.set_gradient_term(4, eqx_phi);
       }
+
+    else if (solve_block_id == 6) // Mechanics LHS
+      {
+        static_assert(dim == 2, "This mechanics block implements 2D plane strain.");
+
+        const VectorValue u = variable_list.template get_value<Vector, LHS>(6);
+        const VectorGrad ux = variable_list.template get_gradient<Vector, LHS>(6);
+        const ScalarValue c = variable_list.template get_value<Scalar, Current>(0);
+        const ScalarValue psi = variable_list.template get_value<Scalar, Current>(3);
+        const ScalarGrad psix = variable_list.template get_gradient<Scalar, Current>(3);
+        const ScalarValue psi_bot = variable_list.template get_value<Scalar, Current>(7);
+
+        // Clamp only the constitutive interpolation, not the c field.
+        const ScalarValue c_mech = std::min(ScalarValue(1.0), std::max(c, ScalarValue(0.0)));
+
+        // Three-dimensional Lame coefficients: correct for plane strain.
+        const number shear_modulus = E_Li / (2.0 * (1.0 + nu_Li));
+        const number lame_lambda = E_Li * nu_Li / ((1.0 + nu_Li) * (1.0 - 2.0 * nu_Li));
+
+        const number K_n = penalty_factor * E_Li / dx;
+
+        // In-plane strain; epsilon_zz = 0.
+        const ScalarValue exx = ux[0][0];
+        const ScalarValue eyy = ux[1][1];
+        const ScalarValue exy = 0.5 * (ux[0][1] + ux[1][0]);
+        const ScalarValue trace_eps = exx + eyy;
+
+        // Stress of solid Li, before domain/stiffness interpolation.
+        VectorGrad stress;
+
+        stress[0][0] = lame_lambda * trace_eps + 2.0 * shear_modulus * exx;
+        stress[1][1] = lame_lambda * trace_eps + 2.0 * shear_modulus * eyy;
+        stress[0][1] = 2.0 * shear_modulus * exy;
+        stress[1][0] = stress[0][1];
+
+        // Linear stiffness interpolation in c.
+        // A residual stiffness extends the solve into void/exterior regions.
+        const ScalarValue solid_weight = psi * psi_bot * c_mech;
+        const ScalarValue stiffness_weight = elastic_floor + (1.0 - elastic_floor) * solid_weight;
+
+        VectorGrad lhs_grad_u;
+        for (unsigned int i = 0; i < dim; ++i)
+          for (unsigned int j = 0; j < dim; ++j)
+            lhs_grad_u[i][j] = stiffness_weight * stress[i][j];
+
+        // Normal spring at the Li-SE interface.
+        const ScalarValue grad_psi_norm = psix.norm();
+
+        // Units: 1/m. Protect division outside the diffuse interface.
+        const ScalarValue grad_floor = ScalarValue(1.0e-12 / dx);
+
+        const ScalarValue denominator = std::max(grad_psi_norm, grad_floor);
+
+        ScalarValue u_dot_grad_psi = ScalarValue(0.0);
+        for (unsigned int i = 0; i < dim; ++i)
+          u_dot_grad_psi += u[i] * psix[i];
+
+        const ScalarValue spring_coefficient = K_n * c_mech * psi_bot / denominator;
+
+        VectorValue lhs_value_u;
+        for (unsigned int i = 0; i < dim; ++i)
+          lhs_value_u[i] = spring_coefficient * u_dot_grad_psi * psix[i];
+
+        variable_list.set_value_term(6, lhs_value_u);
+        variable_list.set_gradient_term(6, lhs_grad_u);
+      }
   }
 
   number D_bulk;
@@ -286,6 +386,12 @@ private:
   number dx;
   number c_interface_width;
   number psi_interface_width;
+  number E_Li;
+  number nu_Li;
+  number p_stack;
+  number penalty_factor;
+  number elastic_floor;
+  number y_mech_bottom;
 };
 
 PRISMS_PF_END_NAMESPACE
