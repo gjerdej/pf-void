@@ -261,9 +261,7 @@ private:
           const ScalarValue psi = variable_list.template get_value<Scalar, Current>(3);
           const ScalarGrad psi_botx = variable_list.template get_gradient<Scalar, Current>(7);
 
-          VectorValue eq_u;
-          for (unsigned int i = 0; i < dim; ++i)
-            eq_u[i] = 0.0;
+          VectorValue eq_u = 0.0;
 
           // Positive pressure at the bottom pushes upward.
           eq_u[1] = p_stack * psi * psi_botx.norm();
@@ -339,8 +337,6 @@ private:
 
     else if (solve_block_id == 6) // Mechanics LHS
       {
-        static_assert(dim == 2, "This mechanics block implements 2D plane strain.");
-
         const VectorValue u = variable_list.template get_value<Vector, LHS>(6);
         const VectorGrad ux = variable_list.template get_gradient<Vector, LHS>(6);
         const ScalarValue c = variable_list.template get_value<Scalar, Current>(0);
@@ -376,28 +372,21 @@ private:
         const ScalarValue solid_weight = psi * psi_bot * c_mech;
         const ScalarValue stiffness_weight = elastic_floor + (1.0 - elastic_floor) * solid_weight;
 
-        VectorGrad lhs_grad_u;
-        for (unsigned int i = 0; i < dim; ++i)
-          for (unsigned int j = 0; j < dim; ++j)
-            lhs_grad_u[i][j] = stiffness_weight * stress[i][j];
+        VectorGrad lhs_grad_u = stiffness_weight * stress;
 
         // Normal spring at the Li-SE interface.
         const ScalarValue grad_psi_norm = psix.norm();
 
         // Units: 1/m. Protect division outside the diffuse interface.
-        const ScalarValue grad_floor = ScalarValue(1.0e-12 / dx);
+        const ScalarValue grad_floor = ScalarValue(1.0e-6);
 
         const ScalarValue denominator = std::max(grad_psi_norm, grad_floor);
 
-        ScalarValue u_dot_grad_psi = ScalarValue(0.0);
-        for (unsigned int i = 0; i < dim; ++i)
-          u_dot_grad_psi += u[i] * psix[i];
+        const ScalarValue u_dot_grad_psi = u * psix;
 
         const ScalarValue spring_coefficient = K_n * c_mech * psi_bot / denominator;
 
-        VectorValue lhs_value_u;
-        for (unsigned int i = 0; i < dim; ++i)
-          lhs_value_u[i] = spring_coefficient * u_dot_grad_psi * psix[i];
+        VectorValue lhs_value_u = spring_coefficient * u_dot_grad_psi * psix;
 
         variable_list.set_value_term(6, lhs_value_u);
         variable_list.set_gradient_term(6, lhs_grad_u);
