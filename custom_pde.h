@@ -42,6 +42,7 @@ public:
     , penalty_factor(get_user_inputs().user_constants.get_double("penalty_factor"))
     , elastic_floor(get_user_inputs().user_constants.get_double("elastic_floor"))
     , y_mech_bottom(get_user_inputs().user_constants.get_double("y_mech_bottom"))
+    , stiffness(get_user_inputs().user_constants.get_elasticity_tensor_plane_strain("stiffness"))
   {
     const auto &mesh = get_user_inputs().spatial_discretization.rectangular_mesh;
 
@@ -261,7 +262,7 @@ private:
           const ScalarValue psi = variable_list.template get_value<Scalar, Current>(3);
           const ScalarGrad psi_botx = variable_list.template get_gradient<Scalar, Current>(7);
 
-          VectorValue eq_u = 0.0;
+          VectorValue eq_u = {};
 
           // Positive pressure at the bottom pushes upward.
           eq_u[1] = p_stack * psi * psi_botx.norm();
@@ -271,26 +272,21 @@ private:
 
       else if (solve_block_id == 8) // Stress postprocessing
         {
-          const VectorGrad ux = variable_list.template get_gradient<Vector, Current>(6);
+          VectorGrad strain = variable_list.template get_symmetric_gradient<Vector, Current>(6);
+          VectorGrad stress;
+          ScalarValue stress_zz(0.0);
           const ScalarValue c = variable_list.template get_value<Scalar, Current>(0);
 
           const ScalarValue c_mech = std::min(ScalarValue(1.0), std::max(c, ScalarValue(0.0)));
 
-          const number shear_modulus = E_Li / (2.0 * (1.0 + nu_Li));
-          const number lame_lambda = E_Li * nu_Li /((1.0 + nu_Li) * (1.0 - 2.0 * nu_Li));
-
-          const ScalarValue exx = ux[0][0];
-          const ScalarValue eyy = ux[1][1];
-          const ScalarValue exy = 0.5 * (ux[0][1] + ux[1][0]);
-
-          const ScalarValue trace_eps = exx + eyy;
-
           // Material stiffness interpolation, including residual stiffness.
           const ScalarValue material_weight = elastic_floor + (1.0 - elastic_floor) * c_mech;
+          
+          PlaneStrain::compute_stress<ScalarValue>(stiffness, strain, stress, stress_zz);
 
-          const ScalarValue sigma_xx = material_weight * (lame_lambda * trace_eps + 2.0 * shear_modulus * exx);
-          const ScalarValue sigma_yy = material_weight * (lame_lambda * trace_eps + 2.0 * shear_modulus * eyy);
-          const ScalarValue sigma_xy = material_weight * 2.0 * shear_modulus * exy;
+          const ScalarValue sigma_xx = material_weight * stress[0][0];
+          const ScalarValue sigma_yy = material_weight * stress[1][1];
+          const ScalarValue sigma_xy = material_weight * stress[0][1];
 
           variable_list.set_value_term(8, sigma_xx);
           variable_list.set_value_term(9, sigma_yy);
@@ -318,7 +314,6 @@ private:
         const number j0          = 1.0e3;
         const number T           = 293.15;     
         
-        
         // Conductivity with a floor in the Li region so that
         //  the matrix does not become singular.
         const ScalarValue conductivity = sigma * (1.0 - psi) * psi_top + sigma_floor * psi;
@@ -343,29 +338,15 @@ private:
         const ScalarValue psi = variable_list.template get_value<Scalar, Current>(3);
         const ScalarGrad psix = variable_list.template get_gradient<Scalar, Current>(3);
         const ScalarValue psi_bot = variable_list.template get_value<Scalar, Current>(7);
+        VectorGrad strain = variable_list.template get_symmetric_gradient<Vector, LHS>(6);
+        VectorGrad stress;
+        ScalarValue stress_zz(0.0);
 
-        // Clamp only the constitutive interpolation, not the c field.
         const ScalarValue c_mech = std::min(ScalarValue(1.0), std::max(c, ScalarValue(0.0)));
-
-        // Three-dimensional Lame coefficients: correct for plane strain.
-        const number shear_modulus = E_Li / (2.0 * (1.0 + nu_Li));
-        const number lame_lambda = E_Li * nu_Li / ((1.0 + nu_Li) * (1.0 - 2.0 * nu_Li));
 
         const number K_n = penalty_factor * E_Li / dx;
 
-        // In-plane strain; epsilon_zz = 0.
-        const ScalarValue exx = ux[0][0];
-        const ScalarValue eyy = ux[1][1];
-        const ScalarValue exy = 0.5 * (ux[0][1] + ux[1][0]);
-        const ScalarValue trace_eps = exx + eyy;
-
-        // Stress of solid Li, before domain/stiffness interpolation.
-        VectorGrad stress;
-
-        stress[0][0] = lame_lambda * trace_eps + 2.0 * shear_modulus * exx;
-        stress[1][1] = lame_lambda * trace_eps + 2.0 * shear_modulus * eyy;
-        stress[0][1] = 2.0 * shear_modulus * exy;
-        stress[1][0] = stress[0][1];
+        PlaneStrain::compute_stress<ScalarValue>(stiffness, strain, stress, stress_zz);
 
         // Linear stiffness interpolation in c.
         // A residual stiffness extends the solve into void/exterior regions.
@@ -409,6 +390,7 @@ private:
   number penalty_factor;
   number elastic_floor;
   number y_mech_bottom;
+  PlaneStrain::VoigtMatrix<number> stiffness;
 };
 
 PRISMS_PF_END_NAMESPACE

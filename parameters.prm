@@ -83,3 +83,4 @@ set Model constant p_stack = 5.0, DOUBLE
 set Model constant penalty_factor = 10.0, DOUBLE
 set Model constant elastic_floor = 1.0e-6, DOUBLE
 set Model constant y_mech_bottom = 0.1, DOUBLE
+set Model constant stiffness = (6.0,0.36), isotropic elastic constants planestrain
