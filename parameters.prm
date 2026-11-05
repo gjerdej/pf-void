@@ -40,7 +40,7 @@ end
 subsection linear solver parameters: 0
   set solver_ids               = 4
 
-  set max iterations           = 30000
+  set max iterations           = 3000
   set tolerance type           = RMSEPerField
   set tolerance value          = 1e-8
   set preconditioner           = mg
@@ -49,14 +49,14 @@ end
 #subsection linear solver parameters: 1
 #  set solver_ids               = 0
 
-#  set max iterations           = 30000
+#  set max iterations           = 3000
 #  set tolerance type           = RMSEPerField
 #  set tolerance value          = 1e-8
 #  set preconditioner            = mg
 #end
 
-set time step = 0.04
-set number steps = 1000
+set time step = 0.002
+set number steps = 2000
 
 set Model constant n_int = 4.0, DOUBLE
 set Model constant D_bulk = 1.0e-15, DOUBLE

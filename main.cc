@@ -63,7 +63,7 @@ main(int argc, char *argv[])
   phi_block.solve_timing     = Uninitialized;
   phi_block.field_indices    = {4};
   phi_block.dependencies_lhs = make_dependency_set(fields, {"lhs(phi)", "grad(lhs(phi))", "psi", "grad(psi)", "c", "psi_top"});
-  phi_block.dependencies_rhs = make_dependency_set(fields, {"c", "psi", "psi_top", "grad(psi_top)"});
+  phi_block.dependencies_rhs = make_dependency_set(fields, {"c", "psi", "grad(psi)", "psi_top", "grad(psi_top)"});
 
   SolveBlock psi_top_block;
   psi_top_block.id            = 5;

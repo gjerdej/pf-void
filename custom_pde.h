@@ -61,6 +61,20 @@ public:
   }
 
 private:
+  ScalarValue boundary_potential_shift(const ScalarValue &x) const
+    {
+      constexpr double delta_V = 1.0e-1; // V; choose the desired right-side shift
+      const double Lx =
+        get_user_inputs().spatial_discretization.rectangular_mesh.size[0];
+      const double epsilon = psi_interface_width / (2.0 * std::atanh(0.8));
+
+      ScalarValue shift;
+      for (unsigned int lane = 0; lane < ScalarValue::size(); ++lane)
+        shift[lane] = 0.5 * delta_V *
+                      (1.0 + std::tanh((x[lane] - 0.5 * Lx) / epsilon));
+      return shift;
+    }
+
   void
   set_initial_condition([[maybe_unused]] const unsigned int       &index,
                         [[maybe_unused]] const unsigned int       &component,
@@ -84,22 +98,11 @@ private:
         // Use the smaller element spacing to define the interface width.
         const double h = std::min(hx, hy);
 
-        const double x0 = 0.5 * mesh_size[0];
-        const double y0 = 0.25 * mesh_size[1];
-        const double radius = mesh_size[0] / 6.0;
+        const double y0 = 0.5 * mesh_size[1];
 
         // Signed distance to the horizontal substrate.
         // Negative below y = y0.
         const double d_plane = point[1] - y0;
-
-        // Signed distance to the circle centered on the substrate surface.
-        // Negative inside the circle.
-        const double dx = point[0] - x0;
-        const double dy = point[1] - y0;
-        const double d_circle = std::sqrt(dx * dx + dy * dy) - radius;
-
-        // Union of substrate and circle.
-        const double signed_distance = std::min(d_plane, d_circle);
 
         /*
         * Define the interface width as the distance over which psi changes
@@ -115,7 +118,7 @@ private:
 
         const double psi_min = 1.0e-6;
 
-        const double profile = 0.5 * (1.0 - std::tanh(signed_distance / epsilon));
+        const double profile = 0.5 * (1.0 - std::tanh(d_plane / epsilon));
 
         scalar_value = psi_min + (1.0 - psi_min) * profile;
       }
@@ -184,7 +187,9 @@ private:
 
         const ScalarValue k_bv = contact * j0 * F / (R * T);
 
-        const ScalarValue j_bv = k_bv * phi;
+        const ScalarValue shift = boundary_potential_shift(variable_list.get_q_point_location()[0]);
+        
+        const ScalarValue j_bv = k_bv * (phi - shift);
         
         const ScalarValue Jnc = j_bv / (F * c_max);
         
@@ -229,10 +234,22 @@ private:
           const ScalarValue psi      = variable_list.template get_value<Scalar, Current>(3);
           const ScalarValue psi_top  = variable_list.template get_value<Scalar, Current>(5);
           const ScalarGrad  psi_topx = variable_list.template get_gradient<Scalar, Current>(5);
+          const ScalarGrad  psix     = variable_list.template get_gradient<Scalar, Current>(3);
+
+          const number F           = 96485.0;
+          const number R           = 8.3145;
+          const number j0          = 1.0e3;
+          const number T           = 293.15; 
+
+          const ScalarValue shift = boundary_potential_shift(variable_list.get_q_point_location()[0]);
 
           const ScalarValue contact = 2.0 * std::max(c, ScalarValue(0.0));
 
-          const ScalarValue rhs_phi = -(1.0-psi) * psi_topx.norm() * J_app;
+          const ScalarValue k_bv = contact * j0 * F / (R * T);
+
+          const ScalarValue rhs_phi =
+            -(1.0 - psi) * psi_topx.norm() * J_app
+            + k_bv * shift * psix.norm() * psi_top;
 
           variable_list.set_value_term(4, rhs_phi);
         }
